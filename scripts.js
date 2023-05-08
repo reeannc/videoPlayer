@@ -1,60 +1,100 @@
-/*get elements*/
-const player = document.querySelector('.player');
-const video = player.querySelector('.viewer');
-const progress = player.querySelector('.progress');
-const progressBar = player.querySelector('.progress__filled');
-const toggle = player.querySelector('.toggle');
-const skipButtons = player.querySelectorAll('[data-skip]');
-const ranges = player.querySelectorAll('.player__slider');
-const fullScreen = player.querySelector('.viewer');
+// Get elements
+const player = document.querySelector(".player");
+const video = player.querySelector(".viewer");
+const progress = player.querySelector(".progress");
+const progressBar = player.querySelector(".progress__filled");
+const toggle = player.querySelector(".toggle");
+const skipButtons = player.querySelectorAll("[data-skip]");
+const ranges = player.querySelectorAll(".player__slider");
+const fullscreen = player.querySelector(".fullscreen");
 
-/*build function*/
-function togglePlay(){
-   const method = video.paused? 'play' : 'pause';
-   video[method]();
-};
-
-function updateButton(){
-    toggle.textContent = this.paused ? '►' : '❚ ❚';
+// Build out functions
+function togglePlay() {
+  const method = video.paused ? "play" : "pause";
+  video[method]();
 }
 
-function skip(){
-    video.currentTime += parseFloat(this.dataset.skip);
+function updateButton() {
+  const icon = this.paused ? "►" : "❚ ❚";
+  toggle.textContent = icon;
 }
 
-function handleRangeUpdate(){
-    video[this.name] = this.value;
+function skip() {
+  video.currentTime += parseFloat(this.dataset.skip);
 }
 
-function handleProgress(){
-    const percent = (video.currentTime / video.duration) * 100;
-    progressBar.style.flexBasis = `${percent}%`;
+function handleRangeUpdate() {
+  video[this.name] = this.value;
 }
 
-function scrub(e){
-    const scrubTime = (e.offsetX / progress.offsetWidth) * video.duration;
-    video.currentTime= scrubTime;
+function handleProgress() {
+  const percent = video.currentTime / video.duration * 100;
+  progressBar.style.flexBasis = `${percent}%`;
 }
 
-/*eventlisteners*/
-video.addEventListener('click', togglePlay);
-video.addEventListener('play', updateButton);
-video.addEventListener('pause', updateButton);
-video.addEventListener('timeupdate', handleProgress);
+function scrub(e) {
+  const scrubTime = e.offsetX / progress.offsetWidth * video.duration;
+  video.currentTime = scrubTime;
+  console.log(e);
+}
 
-toggle.addEventListener('click', togglePlay);
+//  Thanks to Vince Aggrippino for this solution
+let isFullscreen = false;
 
-skipButtons.forEach(button => button.addEventListener('click', skip));
-ranges.forEach(range => range.addEventListener('change', handleRangeUpdate));
+function toggleFullscreen(e) {
+  if (isFullscreen) {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.mozCancelFullScreen) {
+      document.mozCancelFullScreen();
+    } else if (document.webkitCancelFullScreen) {
+      document.webkitCancelFullScreen();
+    } else if (document.msExitFullscreen) {
+      document.msExitFullscreen();
+    } else {
+      console.error("Unable to find a fullscreen exit method.");
+    }
+    console.log("removing fullscreen class");
+  } else {
+    if (player.requestFullscreen) {
+      player.requestFullscreen(); // standard
+    } else if (player.webkitRequestFullscreen) {
+      player.webkitRequestFullscreen();
+    } else if (player.mozRequestFullScreen) {
+      player.mozRequestFullScreen();
+    } else if (player.msRequestFullscreen) {
+      player.msRequestFullscreen();
+    } else {
+      console.error("Unable to find a fullscreen request method");
+    }
+  }
+}
+
+function toggleFullscreenClasses() {
+  player.classList.toggle("fullscreen");
+  isFullscreen = !isFullscreen;
+}
+
+// Hook up event listeners
+video.addEventListener("click", togglePlay);
+video.addEventListener("play", updateButton);
+video.addEventListener("pause", updateButton);
+video.addEventListener("timeupdate", handleProgress);
+
+toggle.addEventListener("click", togglePlay);
+skipButtons.forEach(button => button.addEventListener("click", skip));
+ranges.forEach(range => range.addEventListener("change", handleRangeUpdate));
+ranges.forEach(range => range.addEventListener("mousemove", handleRangeUpdate));
 
 let mousedown = false;
-progress.addEventListener('click', scrub);
-progress.addEventListener('mousemove', (e) =>{ 
-    if(mousedown){
-        scrub(e);
-    }
-    });
-progress.addEventListener('mousedown', () => mousedown = true);
-progress.addEventListener('mouseup', () => mousedown = false);
+progress.addEventListener("click", scrub);
+progress.addEventListener("mousemove", e => mousedown && scrub(e));
+progress.addEventListener("mousedown", () => (mousedown = true));
+progress.addEventListener("mouseup", () => (mousedown = false));
 
-//add fullscreen button to make video fullscreen// 
+fullscreen.addEventListener("click", toggleFullscreen);
+
+document.addEventListener("fullscreenchange", toggleFullscreenClasses);
+document.addEventListener("mozfullscreenchange", toggleFullscreenClasses);
+document.addEventListener("webkitfullscreenchange", toggleFullscreenClasses);
+document.addEventListener("msfullscreenchange", toggleFullscreenClasses);
